@@ -119,8 +119,25 @@ plotmat <- function(mat){
   }
 }
 
+  matvals  <- reactiveValues(
+    rmat = matrix(FALSE, nrow = 6, ncol = 3)
+  )
   
-}
+  observeEvent(input$plot_click,{
+    newpt <- getrc(clk$x, clk$y)
+    if(any(matvals$rmat[newpt[1],])){
+      matvals$rmat[newpt[1], which(matvals$rmat[newpt[1],])] <- FALSE
+    }
+    matvals$rmat[newpt[1], newpt[2]] <- TRUE
+  })
+  
+  output$plot1 <- renderPlot({
+    plotmat(matvals$rmat)
+  })
+  
+  
+  
+} # end of server func
 
 # Run the application 
 shinyApp(ui = ui, server = server)
