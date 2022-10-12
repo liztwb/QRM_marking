@@ -1,0 +1,94 @@
+---
+title: "QRM Coursework Feedback"
+geometry: "left=2cm,right=2cm,top=1cm,bottom=1cm"
+output: 
+    pdf_document:
+        keep_tex: true
+        includes:
+           in_header: header.tex
+#           before_body: bb.tex
+params:
+  rmat: NA
+  comment: NA
+  mark: NA
+  part: NA
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, results='asis', echo = FALSE, warning=FALSE}
+library(shiny)
+#res <-runApp("pickapp")
+#rm <- matrix(FALSE, nrow = 6, ncol = 3)
+# set.seed(43)
+#rm[cbind(1:6,sample(1:3,6, replace = TRUE))] <- TRUE
+rmt <- params$rmat
+if(rmt == "NA"){
+  rmt <- matrix(FALSE, nrow = 6, ncol = 3)
+set.seed(43)
+rmt[cbind(1:6,sample(1:3,6, replace = TRUE))] <- TRUE
+}
+ranks <- apply(rmt, 1, which)
+# ranks <- c(3,2,1) 
+#shiny::runApp("pickapp.R")
+ranks <- ranks + 1
+library(readr)
+#txt <- read_csv('r1a.csv')
+
+heads <- c( "Trait", "Poor", "Satisfactory", "Very good/Excellent")
+r1 <- c("Presentation",
+"Presentation generally poor. Little apparent thought put into design and layout of the report. Inadequate appearance of graphs and tables",
+"Presentation adequate. Evidence that consideration has been given to design and layout of the report. Adequate appearance of graphs and tables",
+"Very well presentated. Evidence that significant consideration has been given to design and layout of the report. Apprearance of graphs and tables very good/excellent")
+r2 <- c("Comprehension of key statistical principles",
+        "Demonstrates limited comprehension of the key statisitical principles relevant to this courswork. Fair understanding of the definitions of terms but little understanding demonstrated of their importance or relevance in describing risk.",
+        "Demonstrates satisfactory comprehension of the key statisitical principles relevant to this courswork. Good understanding of the definitions of terms and fair uderstanding demonstrated of their importance or relevance in describing risk.",
+        "Demonstrates excellent comprehension of the key statisitical principles relevant to this courswork. Very good understanding of the definitions of terms and of their importance or relevance in describing risk.")
+r3 <- c("Comprehension of risk management principles",
+        "Poor understanding of risk management principles as they relate to this coursework.",
+        "Good understanding of risk management principles as they relate to this coursework.",
+        "Excellent understanding of risk management principles as they relate to this coursework.")
+r4 <- c( "Comprehension of computational methods",
+        "Some serious errors in the computational methods employed. Evidence that the relevant computational techniques have not been well understood. ",
+        "Computational methods by and large correct. Evidence that the relevant computational techniques have been adquately understood.",
+"Computational methods employed virtually error-free. Evidence that the relevant computational techniques have been very well understood.")
+r5 <- c( "Clarity of expression",
+        "Expression of arguments, explanations and ideas not always very clear, and sometimes difficult to follow. ",
+        "Adequate expression of arguments, explanations and ideas, though on occasion there is some difficulty encountered by the reader in following them.",
+"Agrguments and explanation very clear and easy to follow.")
+r6 <- c( "Quality of analysis",
+        "Quality of analysis poor - relevant linkages not identified nor connections made.",
+        "Quality of analysis fair, though scope to make deeper connections.",
+"Excellent analysis - a clear link made between the case at hand and relevant concepts.")
+df <- rbind(heads, r1, r2, r3, r4, r5, r6)
+#df[[1]]
+#df[[2]] <- paste0("\\multirow{3}{\\hsize}[-0.7em]{",df[[2]], "}")
+df[1,] <- paste0("\\textbf{", df[1,], "}")
+df[1,1] <- paste0("\\rowcolor{lightgray}", df[1,1])
+
+## row 1 col 3
+m <- matrix(c(2:7, ranks), ncol = 2)
+df[m] <- paste0("\\cellcolor{paleblue}{",df[m], "}")
+
+#df[2,4] <- paste0("\\cellcolor{paleblue}{", df[2,4], "}")
+
+library(xtable)
+xt <- xtable(df)
+## need an extra one here for some reason
+#attr(xt, "align")<- c("|", "b", "|", "b", "|", "b", "|", "b", "|", "b", "|", "b", "|", "s", "|")
+align(xt) <- c( "|", "b", "|", "b", "|", "b", "|", "b", "|", "b", "|")
+cat("\\vspace{-7truemm}","", sep = "\n")
+cat( params$part, "", sep = "\n")
+cat("\\vspace*{.2in}")
+#print(params$rmat)
+cat("Mark: \\framebox[1.1\\width]{", params$mark, "}")
+
+print(xt, tabular.environment = "tabularx", width = "\\textwidth", include.rownames = FALSE, include.colnames = FALSE ,sanitize.text.function = function(x) x,
+      hline.after = c(0,1,nrow(xt)), add.to.row = list(pos=list(1:(nrow(xt)-1)),  command = "\\cline{1-4}"), comment = FALSE)
+cat("\\vspace{0.25in}", "", sep = "\n")
+cat("\\textbf{Comment:}","","\\vspace{0.1in}", sep = "\n")
+cat(params$comment)
+#cat("","\\vspace{0.5in}", "", sep = "\n")
+```
