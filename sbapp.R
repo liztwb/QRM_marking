@@ -2,6 +2,8 @@ library(shiny)
 library(ggplot2)
 library(Cairo)
 
+# sidebar version
+
 # note this could be a list?
 com1 <- "This is comment one placeholder"
 com2 <- "This is comment two placeholder"
@@ -12,49 +14,30 @@ com6 <- "This is comment six placeholder"# Define UI for application that draws 
 
 com_vec <- c(com1,com2,com3,com4,com5,com6)
 
-# ui <- fluidPage(
-ui <- basicPage(
-  
-  # Application title
-  #  titlePanel("Old Faithful Geyser Data"),
-  # custom CSS
-  tags$head(tags$style(
-    HTML("
-          pre, table.table{
-          font-size: smaller;
-          }
-          ")
-  )),
-  fluidRow(
-     column(2,
-           numericInput("mark", "Mark:", NA, min = 0, max = 100,
-                        width = 80))
-   
+ui <- fluidPage(
+# ui <- pageWithSidebar(
+#  shinythemes::themeSelector(),
+  titlePanel('QRM Marking'),
+  sidebarLayout(
+  sidebarPanel(
+    numericInput("mark", "Mark:", NA, min = 0, max = 100,
+                 width = 80),
+    checkboxInput("c1", "c1_summary"),
+    checkboxInput("c2", "c2_summary"),
+    checkboxInput("c3", "c3_summary"),
+    checkboxInput("c4", "c4_summary"),
+    checkboxInput("c5", "c5_summary"),
+    checkboxInput("c6", "c6_summary"),
+    downloadButton("qrmrubric", "Generate report"),
   ),
-          
-           
-  fluidRow(
-    column(10, 
+ mainPanel(
            plotOutput("plot1", height = 400,
-                      click = "plot_click"))
-  ),
-  fluidRow(
-    column(2,downloadButton("qrmrubric", "Generate report") )
-  ),
-  fluidRow(
-    column(3,
-           checkboxInput("c1", "c1_summary"),
-           checkboxInput("c2", "c2_summary")),
-    column(3,
-           checkboxInput("c3", "c3_summary"),
-           checkboxInput("c4", "c4_summary")),
-    column(3,
-           checkboxInput("c5", "c5_summary"),
-           checkboxInput("c6", "c6_summary"))
-  ),
+                      click = "plot_click"),
   column(width = 12, offset = 1,
          textAreaInput("comment", "Comment", width = 800, resize = "vertical"))
+))
 )
+
 
 
 
