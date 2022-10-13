@@ -83,7 +83,7 @@ server <- function(input, output, session) {
   plotmat <- function(mat) {
     plot(
       c(-100, 300),
-      c(-100, 600),
+      c(-100, 630),
       type = "n",
       axes = FALSE,
       xlab = "",
@@ -92,11 +92,14 @@ server <- function(input, output, session) {
     #rect(0, 0, c(100,200,300), 100, col = "blue", border = "black", lwd=2) # transparent
     text(-2,550, "Presentation", pos = 2)
     text(-2,450, "Comprehension of statistics", pos =2)
-     text(-2,350, "Comprehension of risk man", pos = 2)
-      text(-2,250, "Comprehension of computation", pos =2)
-       text(-2,150, "Clarity of expression", pos=2)
-             text(-2,50, "Quality of analysis", pos=2)
-              
+    text(-2,350, "Comprehension of risk man", pos = 2)
+    text(-2,250, "Comprehension of computation", pos =2)
+    text(-2,150, "Clarity of expression", pos=2)
+    text(-2,50, "Quality of analysis", pos=2)
+    text(50,625, "Poor", adj = 0.5)
+    text(150,625, "Satisfactory", adj = 0.5)
+    text(250,625, "Very good", adj = 0.5)
+          
     rect(0, seq(0, 600, 100), 100, 200, lwd = 2)
     rect(100, seq(0, 600, 100), 200, 200, lwd = 2)
     rect(200, seq(0, 600, 100), 300, 200, lwd = 2)
