@@ -1,217 +1,139 @@
 library(shiny)
 library(ggplot2)
 library(Cairo)
+library(dplyr)
 
-# note this could be a list?
-com1 <- "This is comment one placeholder"
-com2 <- "This is comment two placeholder"
-com3 <- "This is comment three placeholder"
-com4 <- "This is comment four placeholder"
-com5 <- "This is comment five placeholder"
-com6 <- "This is comment six placeholder"# Define UI for application that draws a histogram
+source("setup.R")
 
-com_vec <- c(com1,com2,com3,com4,com5,com6)
+start <- Sys.time()
 
-# ui <- fluidPage(
-ui <- basicPage(
-  
-  # Application title
-  #  titlePanel("Old Faithful Geyser Data"),
-  # custom CSS
-  tags$head(tags$style(
-    HTML("
-          pre, table.table{
-          font-size: smaller;
-          }
-          ")
-  )),
-  fluidRow(
-     column(2,
-           numericInput("mark", "Mark:", NA, min = 0, max = 100,
-                        width = 80))
-   
-  ),
-          
-           
-  fluidRow(
-    column(10, 
-           plotOutput("plot1", height = 400,
-                      click = "plot_click"))
-  ),
-  fluidRow(
-    column(2,downloadButton("qrmrubric", "Generate report") )
-  ),
-  fluidRow(
-    column(3,
-           checkboxInput("c1", "c1_summary"),
-           checkboxInput("c2", "c2_summary")),
-    column(3,
-           checkboxInput("c3", "c3_summary"),
-           checkboxInput("c4", "c4_summary")),
-    column(3,
-           checkboxInput("c5", "c5_summary"),
-           checkboxInput("c6", "c6_summary"))
-  ),
-  column(width = 12, offset = 1,
-         textAreaInput("comment", "Comment", width = 800, resize = "vertical"))
-)
-
-
+ui <- fluidPage(
+  titlePanel('QRM Marking'),
+  sidebarLayout(
+    sidebarPanel(
+      numericInput(
+        "mark",
+        "Mark:",
+        NA,
+        min = 0,
+        max = 100,
+        width = 80
+      ),
+      checkboxGroupInput(
+        "comments",
+        "Choose comment",
+        choiceNames = coms[, 1],
+        choiceValues = coms[, 2]
+      ),
+      actionButton("qrmrubric", "Generate Report", class = "btn-success"),
+    ),
+    mainPanel(
+      tabsetPanel(
+      tabPanel("Main",plotOutput("plot1", height = 350,
+                 click = "plot_click"),
+      column(
+        width = 11,
+        offset = 1,
+        textAreaInput(
+          "comment",
+          "Comment",
+          width = "100%",
+          rows = 5,
+          resize = "vertical"
+        )
+      )
+      ),
+      tabPanel("Summary",
+               )
+    )
+  )))
 
 server <- function(input, output, session) {
-
-#  cat(stderr(), "getwd()", getwd())  
-#  wd <- getwd
- 
-
-  getrc <- function(x, y) {
-    col <- ifelse(x > 200, 3,
-                  ifelse(x > 100, 2, 1))
-    row <- ifelse(y > 500, 1,
-                  ifelse(y > 400, 2,
-                         ifelse(y > 300, 3,
-                                ifelse(
-                                  y > 200, 4,
-                                  ifelse(y > 100, 5, 6)
-                                ))))
-    return(c(row, col))
-  }
+  matvals <- reactiveValues(rmat = matrix(FALSE, nrow = 6, ncol = 3))
   
-  getrect <- function(r, c) {
-    xb <- switch(c,
-                 c(0, 100),
-                 c(100, 200),
-                 c(200, 300))
-    yb <- switch(r,
-                 c(500, 600),
-                 c(400, 500),
-                 c(300, 400),
-                 c(200, 300),
-                 c(100, 200),
-                 c(0, 100))
-    
-    
-    #    cat(file  = stderr(), "xb = ", xb, " yb = ", yb, "\n")
-    return(c(xb[1], yb[1], xb[2], yb[2]))
-  }
-  
-  
-  
-  plotmat <- function(mat) {
-    plot(
-      c(-100, 300),
-      c(-100, 600),
-      type = "n",
-      axes = FALSE,
-      xlab = "",
-      ylab = ""
-    )
-    #rect(0, 0, c(100,200,300), 100, col = "blue", border = "black", lwd=2) # transparent
-    text(-2,550, "Presentation", pos = 2)
-    text(-2,450, "Comprehension of statistics", pos =2)
-     text(-2,350, "Comprehension of risk man", pos = 2)
-      text(-2,250, "Comprehension of computation", pos =2)
-       text(-2,150, "Clarity of expression", pos=2)
-             text(-2,50, "Quality of analysis", pos=2)
-              
-    rect(0, seq(0, 600, 100), 100, 200, lwd = 2)
-    rect(100, seq(0, 600, 100), 200, 200, lwd = 2)
-    rect(200, seq(0, 600, 100), 300, 200, lwd = 2)
-    if (any(mat)) {
-      r <- row(mat)[which(mat)]
-      c <-  col(mat)[which(mat)]
-      tc <- cbind(r, c)
-      lst <- list()
-      for (i in 1:dim(tc)[1]) {
-        lst[[i]] <- getrect(tc[i, 1], tc[i, 2])
-      }
-      sapply(lst, function(x)
-        rect(x[1], x[2], x[3], x[4], lwd = 2, col = "lightblue"))
+  observeEvent(input$plot_click, {
+    clk <- input$plot_click
+    newpt <- getrc(clk$x, clk$y)
+    if (any(matvals$rmat[newpt[1], ])) {
+      matvals$rmat[newpt[1], which(matvals$rmat[newpt[1], ])] <-
+        FALSE
     }
-  }
-  
-  matvals <- reactiveValues(
-    rmat = matrix(FALSE, nrow = 6, ncol = 3)
-  )
-  
-  observeEvent(input$plot_click,{
-               clk <- input$plot_click
-               newpt <- getrc(clk$x, clk$y)
-               if(any(matvals$rmat[newpt[1],])){ # something in row
-                # blank <- c(newpt[1], which(matvals$rmat[newpt[1],]))
-                 matvals$rmat[newpt[1], which(matvals$rmat[newpt[1],])] <- FALSE  
-               }
-               matvals$rmat[newpt[1], newpt[2]] <- TRUE
+    matvals$rmat[newpt[1], newpt[2]] <- TRUE
   })
   
   output$plot1 <- renderPlot({
-plotmat(matvals$rmat)
+    plotmat(matvals$rmat)
   })
   
-  output$qrmrubric <- downloadHandler(
-    # For PDF output, change this to "report.pdf"
-    filename = "qrm_rubric.pdf",
-    content = function(file) {
-      # Copy the report file to a temporary directory before processing it, in
-      # case we don't have write permissions to the current working dir (which
-      # can happen when deployed).
-      tempReport <- file.path(tempdir(), "qrm_rubric.Rmd")
-      file.copy("qrm_rubric.Rmd", tempReport, overwrite = TRUE)
-      tempHead <- file.path(tempdir(), "header.tex")
-      file.copy("header.tex", tempHead, overwrite = TRUE)
-      com <- input$comment
-      if(input$c1){ com <- paste(com, com1, sep = "\n\n")}
-      if(input$c2){ com <- paste(com, com2, sep = "\n\n")}
-      if(input$c3){ com <- paste(com, com3, sep = "\n\n")}
-      if(input$c4){ com <- paste(com, com4, sep = "\n\n")}
-      if(input$c5){ com <- paste(com, com5, sep = "\n\n")}
-      if(input$c6){ com <- paste(com, com6, sep = "\n\n")}
-      # Set up parameters to pass to Rmd document
-      # Knit the document, passing in the `params` list, and eval it in a
-      # child of the global environment (this isolates the code in the document
-      # from the code in this app).
-      wd <- getwd()
-      pstr <- strsplit(wd, "/")[[1]][8]
-      part <- paste(strsplit(pstr, "_")[[1]][1:2], collapse = " ")
-      library(dplyr)
-      library(readr)
-      gfile <- "C:/Users/liztwb/Documents/QRM/Marking/Grades.csv"
-      d <- read_csv(gfile)
-      #id <- paste("Participant", part)
-      #idname <- names(d)[1]
-      #dplyr::filter(d, idname == id)
-      row <- which(d[,1] == part)
-      d[row,"Grade"] <- input$mark
-      write_csv(d, gfile)
-      dd <- list(comment = input$comment, 
-                 c1 = input$c1,  c2 = input$c2,
-                 c3 = input$c3, c4 = input$c4,
-                 c5 = input$c5, c6 = input$c6,
-                 mark = input$mark, participant = part,
-                 rmat = matvals$rmat, time = Sys.time() )
-      fullname <- "C:/Users/liztwb/Documents/QRM/Marking/record.rds"
-      if(!file.exists(fullname)){
-        saveRDS(dd, fullname)
-      } else {
-        d <- readRDS(fullname)
-        n <- length(d)
-        d[[n+1]] <- dd
-        saveRDS(d, fullname)
-      }
-      params <- list(rmat = matvals$rmat, 
-                     comment = com, 
-                     mark = input$mark,
-                     part = part)
-      out <- rmarkdown::render(tempReport,
-                        params = params,
-                        envir = new.env(parent = globalenv())
-                        
-      )
-      file.copy(out, "../feedback.pdf", overwrite = TRUE)   
-      stopApp()
-    }
-)
-}
 
+  observe({
+    filename = "qrm_rubric.pdf"
+    tempReport <- file.path(tempdir(), "qrm_rubric.Rmd")
+    file.copy("qrm_rubric.Rmd", tempReport, overwrite = TRUE)
+    tempHead <- file.path(tempdir(), "header.tex")
+    file.copy("header.tex", tempHead, overwrite = TRUE)
+    com <- input$comment
+    sel_coms <- input$comments
+    small_coms <- paste(sel_coms, collapse = "\n\n")
+    com <- paste(com, small_coms, sep  = "\n\n")
+    # Set up parameters to pass to Rmd document
+    # Knit the document, passing in the `params` list, and eval it in a
+    # child of the global environment (this isolates the code in the document
+    # from the code in this app).
+    # restore after testing
+    #            wd <- getwd()
+    #      pstr <- strsplit(wd, "/")[[1]][8]
+    #      part <- paste(strsplit(pstr, "_")[[1]][1:2], collapse = " ")
+    part <- 333333
+    library(dplyr)
+    library(readr)
+    gfile <- "C:/Users/liztwb/Documents/QRM/Marking/Grades.csv"
+    gfile <- "test.csv"
+    d <- read_csv(gfile)
+    #id <- paste("Participant", part)
+    #idname <- names(d)[1]
+    #dplyr::filter(d, idname == id)
+    row <- which(d[, 1] == part)
+    d[row, "Grade"] <- input$mark
+    write_csv(d, gfile)
+    dd <- list(
+      comment = input$comment,
+      input$comments,
+      mark = input$mark,
+      participant = part,
+      rmat = matvals$rmat,
+      start =  start,
+      time = Sys.time()
+    )
+    fullname <- "C:/Users/liztwb/Documents/QRM/Marking/record.rds"
+    fullname <- "record.rds"
+    if (!file.exists(fullname)) {
+      saveRDS(dd, fullname)
+    } else {
+      d <- readRDS(fullname)
+      n <- length(d)
+      d[[n + 1]] <- dd
+      saveRDS(d, fullname)
+    }
+    params <- list(
+      rmat = matvals$rmat,
+      comment = com,
+      mark = input$mark,
+      part = part
+    )
+    out <- rmarkdown::render(
+      tempReport,
+      output_format = "pdf_document",
+      params = params,
+      envir = new.env(parent = globalenv())
+      
+    )
+    #      file.copy(out, "../feedback.pdf", overwrite = TRUE)
+    file.copy(out, "feedback.pdf", overwrite = TRUE)
+    stopApp()
+    
+  }) %>%
+    bindEvent(input$qrmrubric)
+}
 
 shinyApp(ui, server)
