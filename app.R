@@ -2,7 +2,7 @@ library(shiny)
 library(ggplot2)
 library(Cairo)
 library(dplyr)
-
+library(flexdashboard)
 source("setup.R")
 
 start <- Sys.time()
@@ -44,7 +44,23 @@ ui <- fluidPage(
       )
       ),
       tabPanel("Summary",
+               fluidRow(
+                 column(3,
+                        shinydashboard::box(
+                          width = 12,
+                          title = "Progress",
+                          gaugeOutput("proggauge")
+                        )
+                 ),
+               column(3,
+                      shinydashboard::box(
+                        width = 12,
+                        title = "Average",
+                      gaugeOutput("avgauge")
+                      )
+                )
                )
+      )
     )
   )))
 
@@ -59,6 +75,24 @@ server <- function(input, output, session) {
         FALSE
     }
     matvals$rmat[newpt[1], newpt[2]] <- TRUE
+  })
+  
+  output$proggauge = renderGauge({
+    gauge(0.6, #input$value, 
+          min = 0, 
+          max = 1, 
+          sectors = gaugeSectors(success = c(0.5, 1), 
+                                 warning = c(0.3, 0.5),
+                                 danger = c(0, 0.3)))
+  })
+  
+  output$avgauge = renderGauge({
+    gauge(65.7, #input$value, 
+          min = 0, 
+          max = 100, 
+          sectors = gaugeSectors(success = c(60, 100), 
+                                 warning = c(40, 60),
+                                 danger = c(0, 40)))
   })
   
   output$plot1 <- renderPlot({
@@ -129,7 +163,15 @@ server <- function(input, output, session) {
       
     )
     #      file.copy(out, "../feedback.pdf", overwrite = TRUE)
-    file.copy(out, "feedback.pdf", overwrite = TRUE)
+    # check if we can write - if not creat the next in sequence
+    
+    copy_result <- try(file.copy(out, "feedback.pdf", overwrite = TRUE))
+    if(!copy_result){
+      feeds <- list.files(pattern = glob2rx("feedback*.pdf"))
+      dim_feeds <- length(feeds)
+      new_name <- paste0("feedback", dim_feeds,".pdf")
+      file.copy(out, new_name)
+    }
     stopApp()
     
   }) %>%
