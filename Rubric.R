@@ -79,7 +79,7 @@ ui <- fluidPage(
   )))
 
 server <- function(input, output, session) {
-  nd <- readRDS("C:/Users/liztwb/Documents/QRM/Marking/2024/record.rds")
+  nd <- readRDS("C:/Users/liztwb/Documents/QRM/Marking/record.rds")
   prop_done <- mt <- NA
   if(length(nd) >= 1){
   times <- sapply(nd, function(x) x$time - x$start)
@@ -95,7 +95,7 @@ server <- function(input, output, session) {
     xlab("Mark") + 
     geom_density()
   
-  grd <- readr::read_csv("C:/Users/liztwb/Documents/QRM/Marking/2024/Grades.csv", show_col_types = FALSE)
+  grd <- read_csv("C:/Users/liztwb/Documents/QRM/Marking/Grades.csv", show_col_types = FALSE)
   tot <- dim(grd)[1]
   prop_done <- round(100*length(nd)/tot,2)}
   
@@ -164,22 +164,21 @@ server <- function(input, output, session) {
     # from the code in this app).
     # restore after testing
          wd <- getwd()
-        pstr <- strsplit(wd, "/")[[1]][9]
+        pstr <- strsplit(wd, "/")[[1]][8]
       #  part <- paste(strsplit(pstr, "_")[[1]][1:2], collapse = " ")
         part <- strsplit(pstr, "_")[[1]][2] # just number
     #part <- 333333
     library(dplyr)
     library(readr)
-    gfile <- "C:/Users/liztwb/Documents/QRM/Marking/2024/Grades.csv"
+    gfile <- "C:/Users/liztwb/Documents/QRM/Marking/Grades.csv"
     #gfile <- "test.csv"
-    d <- readr::read_csv(gfile)
+    d <- read_csv(gfile)
     #id <- paste("Participant", part)
     #idname <- names(d)[1]
     #dplyr::filter(d, idname == id)
-    partstr <- paste0("Participant ",part)
-    row <- which(d[, 1] == partstr)
+    row <- which(d[, 1] == part)
     d[row, "Grade"] <- input$mark
-    readr::write_csv(d, gfile)
+    write_csv(d, gfile)
     dd <- list(
       comment = input$comment,
       input$comments,
@@ -189,7 +188,7 @@ server <- function(input, output, session) {
       start =  start,
       time = Sys.time()
     )
-    fullname <- "C:/Users/liztwb/Documents/QRM/Marking/2024/record.rds"
+    fullname <- "C:/Users/liztwb/Documents/QRM/Marking/record.rds"
    # fullname <- "record.rds"
     if (!file.exists(fullname)) {
       saveRDS(dd, fullname)
